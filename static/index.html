@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NovaMind AI — ChatGPT-Grade Assistant with Full Context Memory</title>
+  <meta name="description" content="State-of-the-art interactive AI study planner and chatbot with authentic multi-turn context memory powered by agent.py" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Markdown & Syntax Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="dark-theme">
+  <div class="app-layout">
+    <!-- Collapsible Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5"></path>
+              <path d="M2 12l10 5 10-5"></path>
+            </svg>
+          </div>
+          <div class="brand-info">
+            <span class="brand-title">NovaMind AI</span>
+            <span class="brand-tag">Multi-Turn Context Agent</span>
+          </div>
+        </div>
+        <button class="btn-icon" id="sidebar-toggle" title="Toggle Sidebar (Ctrl+B)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+            <path d="M9 3v18"></path>
+          </svg>
+        </button>
+      </div>
+
+      <button class="btn-new-chat" id="btn-new-chat">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>New Conversation</span>
+        <kbd>Ctrl+K</kbd>
+      </button>
+
+      <div class="sidebar-section-title">
+        <span>Chat History</span>
+        <button class="btn-text-xs" id="btn-clear-history" title="Clear all history">Clear</button>
+      </div>
+
+      <div class="chat-history-list" id="chat-history-list">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Context Memory Dashboard Tile in Sidebar -->
+      <div class="sidebar-features">
+        <button class="feature-tile" id="open-context-inspector-btn" title="Inspect full LLM prompt & context">
+          <div class="feature-icon glow-cyan">🧠</div>
+          <div class="feature-text">
+            <strong>Context Inspector</strong>
+            <small id="sidebar-context-summary">1 message in memory</small>
+          </div>
+        </button>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="avatar-user-mini">🎓</div>
+          <div class="user-meta">
+            <span class="user-name">Study Scholar</span>
+            <span class="model-indicator" id="current-model-badge">Llama 3.3 70B</span>
+          </div>
+        </div>
+        <button class="btn-icon" id="open-settings-modal" title="Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Chat Workspace -->
+    <main class="chat-workspace">
+      <!-- Top Navigation Bar -->
+      <header class="chat-header">
+        <div class="header-left">
+          <button class="btn-icon mobile-sidebar-btn" id="mobile-sidebar-toggle">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div class="model-picker-container">
+            <button class="model-dropdown-trigger" id="model-dropdown-btn">
+              <span class="active-badge-dot"></span>
+              <span id="active-model-name">Llama 3.3 70B (Free)</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div class="model-menu" id="model-menu">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Active Context Counter Pill -->
+          <button class="context-pill" id="context-pill" title="Click to inspect LLM context memory">
+            <span class="context-icon">🧠</span>
+            <span id="context-pill-text">Context: 1 msg (System)</span>
+          </button>
+
+          <button class="btn-icon" id="theme-toggle" title="Toggle Light/Dark Mode">
+            <svg id="theme-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </button>
+
+          <button class="btn-icon" id="export-chat-btn" title="Export Conversation to Markdown">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- API Key Quick Banner (Shown if no key is configured) -->
+      <div class="api-key-banner" id="api-key-banner">
+        <div class="banner-content">
+          <span class="banner-icon">🔑</span>
+          <span><strong>OpenRouter API Key needed:</strong> Enter your key to feed actual context to the live AI models.</span>
+        </div>
+        <div class="banner-actions">
+          <input type="password" id="banner-api-key-input" placeholder="sk-or-v1-..." />
+          <button class="btn-primary-sm" id="banner-save-key-btn">Save Key</button>
+          <a href="https://openrouter.ai/keys" target="_blank" class="banner-link">Get Free Key</a>
+        </div>
+      </div>
+
+      <!-- Chat Messages Container -->
+      <div class="chat-container" id="chat-container">
+        <!-- Hero Welcome Screen -->
+        <div class="hero-screen" id="hero-screen">
+          <div class="hero-glow"></div>
+          <div class="hero-badge">
+            <span class="hero-badge-dot"></span> True Multi-Turn Context Memory Active
+          </div>
+          <h1 class="hero-title">Ask anything. Follow up naturally.</h1>
+          <p class="hero-subtitle">
+            Every question, answer, and adjustment stays in the model's active context window. Ask follow-up questions, request deeper explanations, or refine plans without losing state.
+          </p>
+
+          <!-- Prompt Inspiration Chips -->
+          <div class="prompt-grid">
+            <div class="prompt-card" data-prompt="Create a comprehensive 4-week study plan to master Python for AI engineering">
+              <div class="prompt-card-icon">🐍</div>
+              <div class="prompt-card-content">
+                <strong>Python to AI Engineering</strong>
+                <p>Complete 4-week curriculum from foundations to LangChain & LLM APIs</p>
+              </div>
+            </div>
+
+            <div class="prompt-card" data-prompt="Design an intensive 14-day study plan for System Design interviews">
+              <div class="prompt-card-icon">⚡</div>
+              <div class="prompt-card-content">
+                <strong>System Design Mastery</strong>
+                <p>Microservices, sharding, distributed caches, and failure domains</p>
+              </div>
+            </div>
+
+            <div class="prompt-card" data-prompt="I want to learn Linear Algebra and Calculus for Machine Learning. Give me a structured syllabus.">
+              <div class="prompt-card-icon">📐</div>
+              <div class="prompt-card-content">
+                <strong>Math for Machine Learning</strong>
+                <p>Eigenvectors, partial derivatives, and loss function optimizations</p>
+              </div>
+            </div>
+
+            <div class="prompt-card" data-prompt="Build a full-stack web application with FastAPI and Vanilla JavaScript in 7 days">
+              <div class="prompt-card-icon">🚀</div>
+              <div class="prompt-card-content">
+                <strong>Full-Stack Sprint</strong>
+                <p>REST API, database modeling, frontend architecture, and deployment</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div class="messages-list" id="messages-list"></div>
+      </div>
+
+      <!-- Floating Bottom Prompt Input Area -->
+      <div class="input-panel">
+        <div class="input-wrapper">
+          <div class="quick-tools-bar">
+            <div class="tool-tag active" id="mode-study-btn">📚 Study Planner</div>
+            <div class="tool-tag" id="mode-chat-btn">💬 General Chat</div>
+            <div class="context-indicator-tag" id="context-indicator-tag">
+              🧠 Context: <strong id="context-turns-count">0 turns</strong>
+            </div>
+          </div>
+
+          <div class="textarea-container">
+            <textarea
+              id="user-input"
+              rows="1"
+              placeholder="Ask a question or follow up on previous answers..."
+              autofocus
+            ></textarea>
+
+            <div class="input-actions">
+              <!-- Stop Streaming Button -->
+              <button class="btn-stop-stream hidden" id="btn-stop-stream" title="Stop generating">
+                <span class="stop-icon"></span>
+                <span>Stop</span>
+              </button>
+
+              <!-- Voice Dictation Button -->
+              <button class="btn-icon-subtle" id="btn-mic" title="Voice Input">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <line x1="12" y1="19" x2="12" y2="23"></line>
+                  <line x1="8" y1="23" x2="16" y2="23"></line>
+                </svg>
+              </button>
+
+              <!-- Send Button -->
+              <button class="btn-send" id="btn-send" title="Send (Enter)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="input-disclaimer">
+            <span>Powered by <code>agent.py</code> • Full multi-turn context passed to OpenRouter • Press <kbd>Shift + Enter</kbd> for new line</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Context Inspector Modal (Displays EXACT context sent to the AI Model) -->
+  <div class="modal-backdrop" id="context-inspector-modal">
+    <div class="modal-card modal-wide">
+      <div class="modal-header">
+        <h3>🧠 Active Context Window Inspector</h3>
+        <button class="btn-icon close-modal-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="field-hint">
+          This is the exact JSON payload passed to the AI model on every request. You can verify that all your conversation turns and instructions are present in the context memory.
+        </p>
+
+        <div class="context-stats-row">
+          <div class="cstat-item">
+            <span class="cstat-label">Total Messages</span>
+            <strong id="insp-total-messages">1</strong>
+          </div>
+          <div class="cstat-item">
+            <span class="cstat-label">Conversation Turns</span>
+            <strong id="insp-turns">0</strong>
+          </div>
+          <div class="cstat-item">
+            <span class="cstat-label">Active Model</span>
+            <strong id="insp-model">Llama 3.3 70B</strong>
+          </div>
+        </div>
+
+        <div class="context-code-viewer">
+          <div class="code-header">
+            <span>messages: Array&lt;ChatMessage&gt;</span>
+            <button class="btn-copy-code" id="btn-copy-context">Copy JSON</button>
+          </div>
+          <pre><code class="language-json" id="context-json-display">[]</code></pre>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btn-clear-context-modal">Clear Context Memory</button>
+        <button class="btn-primary close-modal-btn">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-backdrop" id="settings-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>⚙️ Agent Settings & API Key</h3>
+        <button class="btn-icon close-modal-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="setting-api-key">
+            <span>OpenRouter API Key</span>
+            <small class="label-hint"><a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a></small>
+          </label>
+          <div class="input-with-toggle">
+            <input type="password" id="setting-api-key" placeholder="sk-or-v1-..." autocomplete="off" />
+            <button class="btn-toggle-eye" id="toggle-key-visibility">👁️</button>
+          </div>
+          <span class="field-hint">Your API key is used directly with OpenRouter to stream responses with full context memory.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="setting-model-select">Selected LLM Model</label>
+          <select id="setting-model-select">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="setting-system-prompt">Custom System Instruction (Persona)</label>
+          <textarea id="setting-system-prompt" rows="4" placeholder="You are an expert study planning AI..."></textarea>
+          <span class="field-hint">This instruction sets the personality and guiding principles at index 0 of every context window.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="setting-context-turns">Context Memory Window</label>
+          <select id="setting-context-turns">
+            <option value="0">Full History (Unlimited)</option>
+            <option value="20">Last 20 messages</option>
+            <option value="10">Last 10 messages</option>
+            <option value="6">Last 6 messages</option>
+          </select>
+          <span class="field-hint">How many previous messages are fed into the LLM context memory.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary close-modal-btn">Cancel</button>
+        <button class="btn-primary" id="btn-save-settings">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
