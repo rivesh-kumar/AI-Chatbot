@@ -143,19 +143,6 @@
         </div>
       </header>
 
-      <!-- API Key Quick Banner (Shown if no key is configured) -->
-      <div class="api-key-banner" id="api-key-banner">
-        <div class="banner-content">
-          <span class="banner-icon">🔑</span>
-          <span><strong>OpenRouter API Key needed:</strong> Enter your key to feed actual context to the live AI models.</span>
-        </div>
-        <div class="banner-actions">
-          <input type="password" id="banner-api-key-input" placeholder="sk-or-v1-..." />
-          <button class="btn-primary-sm" id="banner-save-key-btn">Save Key</button>
-          <a href="https://openrouter.ai/keys" target="_blank" class="banner-link">Get Free Key</a>
-        </div>
-      </div>
-
       <!-- Chat Messages Container -->
       <div class="chat-container" id="chat-container">
         <!-- Hero Welcome Screen -->
@@ -309,21 +296,10 @@
   <div class="modal-backdrop" id="settings-modal">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>⚙️ Agent Settings & API Key</h3>
+        <h3>⚙️ Agent Settings</h3>
         <button class="btn-icon close-modal-btn">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="form-group">
-          <label for="setting-api-key">
-            <span>OpenRouter API Key</span>
-            <small class="label-hint"><a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a></small>
-          </label>
-          <div class="input-with-toggle">
-            <input type="password" id="setting-api-key" placeholder="sk-or-v1-..." autocomplete="off" />
-            <button class="btn-toggle-eye" id="toggle-key-visibility">👁️</button>
-          </div>
-          <span class="field-hint">Your API key is used directly with OpenRouter to stream responses with full context memory.</span>
-        </div>
 
         <div class="form-group">
           <label for="setting-model-select">Selected LLM Model</label>

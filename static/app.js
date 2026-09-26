@@ -14,7 +14,6 @@ const state = {
   currentSessionId: null,
   sessions: [],
   activeModel: storedModel,
-  apiKey: localStorage.getItem('novamind_openrouter_key') || '',
   systemPrompt: localStorage.getItem('novamind_system_prompt') || '',
   contextTurnsLimit: parseInt(localStorage.getItem('novamind_context_limit') || '0', 10), // 0 = unlimited
   isGenerating: false,
@@ -50,11 +49,6 @@ const DOM = {
   sidebarContextSummary: document.getElementById('sidebar-context-summary'),
   openContextInspectorBtn: document.getElementById('open-context-inspector-btn'),
   
-  // API Key Banner
-  apiKeyBanner: document.getElementById('api-key-banner'),
-  bannerApiKeyInput: document.getElementById('banner-api-key-input'),
-  bannerSaveKeyBtn: document.getElementById('banner-save-key-btn'),
-  
   modelDropdownBtn: document.getElementById('model-dropdown-btn'),
   modelMenu: document.getElementById('model-menu'),
   activeModelName: document.getElementById('active-model-name'),
@@ -69,12 +63,10 @@ const DOM = {
   // Settings Modal
   settingsModal: document.getElementById('settings-modal'),
   openSettingsBtn: document.getElementById('open-settings-modal'),
-  settingApiKey: document.getElementById('setting-api-key'),
   settingModelSelect: document.getElementById('setting-model-select'),
   settingSystemPrompt: document.getElementById('setting-system-prompt'),
   settingContextTurns: document.getElementById('setting-context-turns'),
   btnSaveSettings: document.getElementById('btn-save-settings'),
-  toggleKeyVisibility: document.getElementById('toggle-key-visibility'),
   
   // Context Inspector Modal
   contextInspectorModal: document.getElementById('context-inspector-modal'),
@@ -123,13 +115,6 @@ async function checkConfig() {
     state.hasEnvKey = data.has_env_key;
     if (!state.systemPrompt && data.default_system_prompt) {
       state.systemPrompt = data.default_system_prompt;
-    }
-
-    // Toggle API Key Quick Banner
-    if (state.hasEnvKey || (state.apiKey && state.apiKey.trim())) {
-      DOM.apiKeyBanner.classList.add('hidden');
-    } else {
-      DOM.apiKeyBanner.classList.remove('hidden');
     }
   } catch (e) {
     console.warn('Could not read /api/config', e);
@@ -396,30 +381,6 @@ function bindEvents() {
     }
   });
 
-  // API Key Quick Banner Save
-  DOM.bannerSaveKeyBtn.addEventListener('click', async () => {
-    const key = DOM.bannerApiKeyInput.value.trim();
-    if (!key) {
-      alert('Please enter an OpenRouter API key.');
-      return;
-    }
-    state.apiKey = key;
-    localStorage.setItem('novamind_openrouter_key', key);
-    DOM.apiKeyBanner.classList.add('hidden');
-
-    // Optionally save to .env
-    try {
-      await fetch('/api/save-key', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ api_key: key })
-      });
-    } catch (e) {
-      console.warn('Could not persist key to .env:', e);
-    }
-    alert('OpenRouter API key saved! Context is now connected to live AI models.');
-  });
-
   // Model Menu Trigger
   DOM.modelDropdownBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -482,10 +443,6 @@ function bindEvents() {
 
   // Settings Save
   DOM.btnSaveSettings.addEventListener('click', saveSettings);
-  DOM.toggleKeyVisibility.addEventListener('click', () => {
-    const input = DOM.settingApiKey;
-    input.type = input.type === 'password' ? 'text' : 'password';
-  });
 
   // Export to Markdown
   DOM.exportChatBtn.addEventListener('click', exportChatToMarkdown);
@@ -520,7 +477,6 @@ function closeAllModals() {
 }
 
 function openSettings() {
-  DOM.settingApiKey.value = state.apiKey;
   DOM.settingSystemPrompt.value = state.systemPrompt;
   DOM.settingContextTurns.value = state.contextTurnsLimit.toString();
   DOM.settingModelSelect.value = state.activeModel;
@@ -528,28 +484,12 @@ function openSettings() {
 }
 
 async function saveSettings() {
-  state.apiKey = DOM.settingApiKey.value.trim();
   state.systemPrompt = DOM.settingSystemPrompt.value.trim();
   state.contextTurnsLimit = parseInt(DOM.settingContextTurns.value, 10);
   state.activeModel = DOM.settingModelSelect.value;
 
-  localStorage.setItem('novamind_openrouter_key', state.apiKey);
   localStorage.setItem('novamind_system_prompt', state.systemPrompt);
   localStorage.setItem('novamind_context_limit', state.contextTurnsLimit.toString());
-
-  // Save to .env if key provided
-  if (state.apiKey) {
-    try {
-      await fetch('/api/save-key', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ api_key: state.apiKey })
-      });
-      DOM.apiKeyBanner.classList.add('hidden');
-    } catch (e) {
-      console.warn('Could not save key to .env:', e);
-    }
-  }
 
   // Update dropdown display
   const selectedOpt = DOM.settingModelSelect.selectedOptions[0];
@@ -631,7 +571,6 @@ async function handleSend() {
       body: JSON.stringify({
         goal: text,
         history: historyPayload,
-        api_key: state.apiKey || undefined,
         model: state.activeModel,
         system_instruction: state.systemPrompt || undefined
       }),
@@ -675,13 +614,6 @@ async function handleSend() {
             accumulatedText += payload.chunk;
             renderStreamingText(assistantBubble, accumulatedText);
             scrollToBottom();
-          }
-
-          if (payload.error) {
-            // Check if key is needed and reveal banner
-            if (accumulatedText.includes('API Key Required') || accumulatedText.includes('API Key Missing')) {
-              DOM.apiKeyBanner.classList.remove('hidden');
-            }
           }
         } catch (e) {
           console.error('Error parsing SSE stream line:', e);
