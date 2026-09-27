@@ -59,17 +59,24 @@ async def get_config():
 
 @app.post("/api/save-key")
 async def save_api_key(req: SaveKeyRequest):
-    """Saves the OpenRouter API key to local .env file."""
+    """Saves the OpenRouter API key to environment (session only on Vercel)."""
     key = req.api_key.strip()
     if not key:
         return JSONResponse({"status": "error", "message": "Key cannot be empty."}, status_code=400)
     
     os.environ["OPENROUTER_API_KEY"] = key
-    env_path = os.path.join(os.path.dirname(__file__), ".env")
-    with open(env_path, "w", encoding="utf-8") as f:
-        f.write(f"OPENROUTER_API_KEY={key}\n")
+    
+    # Try to write .env locally (works in local dev, skipped on Vercel read-only FS)
+    try:
+        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+        with open(env_path, "w", encoding="utf-8") as f:
+            f.write(f"OPENROUTER_API_KEY={key}\n")
+        message = "API key saved to .env file and active environment."
+    except (OSError, PermissionError):
+        # On Vercel, filesystem is read-only — key is active for this session only
+        message = "API key is active for this session. On Vercel, set it as an Environment Variable in your project settings for persistence."
         
-    return JSONResponse({"status": "success", "message": "API key saved to .env file and active environment."})
+    return JSONResponse({"status": "success", "message": message})
 
 @app.post("/api/context/inspect")
 async def inspect_context(req: ChatRequest):
@@ -193,6 +200,8 @@ async def get_available_models():
         }
     ])
 
+# Vercel handler — exposes 'app' for @vercel/python
+# Local dev: python run_app.py  OR  uvicorn server:app --reload
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=True)
